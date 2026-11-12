@@ -177,4 +177,30 @@ def do_icons(logo_path: Path, apply: bool, log: list):
             big.save(p, format="ICO",
                      sizes=[(s, s) for s in (16, 24, 32, 48, 64, 128, 256)])
         else:
-            render(logo, w, h,
+            render(logo, w, h, p.name).save(p, format="PNG")
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--apply", action="store_true", help="write changes (default: report only)")
+    ap.add_argument("--logo", default="ags-logo.png")
+    ap.add_argument("--app-id", default="", help="new Android applicationId, e.g. app.ags.pro")
+    a = ap.parse_args()
+
+    log: list = []
+    do_text(a.apply, log)
+    do_app_id(a.app_id, a.apply, log)
+    do_icons(ROOT / a.logo, a.apply, log)
+
+    print(f"## AGS PRO rebrand ({'APPLIED' if a.apply else 'DRY RUN'})\n")
+    print("\n".join(f"- {l}" for l in log) if log else "- nothing matched")
+    print(f"\n{len(log)} item(s)")
+    # Help to spot things left behind that need a human look
+    left = [str(p.relative_to(ROOT)) for p in ROOT.rglob("*")
+            if p.is_file() and "app.concat" in p.name]
+    if left:
+        print("\nFiles still named app.concat*:", *left, sep="\n  ")
+
+
+if __name__ == "__main__":
+    sys.exit(main())
