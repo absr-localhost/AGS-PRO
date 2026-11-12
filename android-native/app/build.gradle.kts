@@ -12,7 +12,7 @@ android {
 
     defaultConfig {
         // Never app.concat.editor: this installs beside the shipping app.
-        applicationId = "app.concat.editor.spike"
+        applicationId = "app.ags.pro"
         minSdk = 26
         targetSdk = 35
         versionCode = 1
