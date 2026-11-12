@@ -1,0 +1,55 @@
+name: AGS PRO rebrand
+
+# Jalankan manual: tab Actions -> "AGS PRO rebrand" -> Run workflow.
+# Hasilnya masuk ke branch "ags-pro"; branch "main" tidak disentuh,
+# jadi sinkron dengan upstream tetap mudah.
+
+on:
+  workflow_dispatch:
+    inputs:
+      app_id:
+        description: "Android applicationId baru (kosongkan = tidak diubah)"
+        default: "app.ags.pro"
+        required: false
+      dry_run:
+        description: "Hanya laporan, jangan ubah apa pun"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  rebrand:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Pillow
+        run: pip install pillow
+
+      - name: Check logo exists
+        run: test -f ags-logo.png || (echo "ags-logo.png belum ada di root repo" && exit 1)
+
+      - name: Report only
+        if: ${{ inputs.dry_run }}
+        env:
+          APP_ID: ${{ inputs.app_id }}
+        run: python3 scripts/ags_rebrand.py --app-id "$APP_ID" | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Apply rebrand and push to branch ags-pro
+        if: ${{ !inputs.dry_run }}
+        env:
+          APP_ID: ${{ inputs.app_id }}
+        run: |
+          python3 scripts/ags_rebrand.py --apply --app-id "$APP_ID" | tee -a "$GITHUB_STEP_SUMMARY"
+          git config user.name "ags-pro-bot"
+          git config user.email "ags-pro-bot@users.noreply.github.com"
+          git checkout -B ags-pro
+          git add -A
+          git commit -m "AGS PRO: rename and icons" || echo "nothing to commit"
+          git push -f origin ags-pro
